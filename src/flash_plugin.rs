@@ -25,6 +25,8 @@ use ratatui::{
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
     layout::Rect,
 };
+
+use crate::flash_defaults::{default_popup_action, get_default_bindings, get_functionalities};
 const JUMP_KEYS: [char; 25] = [
     'q', 'w', 'e', 'r', 't', 'u', 'i', 'o', 'p', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'z',
     'x', 'c', 'v', 'b', 'n', 'm',
@@ -58,6 +60,24 @@ pub struct FlashJumpPopUp {
 }
 
 impl FlashJumpPopUp {
+    pub fn new_with_open(keymap: HashMap<(Mode, Vec<KeyEvent>), Action>) -> Self {
+        FlashJumpPopUp {
+            keymap,
+            should_quit: false,
+            query: "".to_string(),
+            should_open: true,
+            jump_map: HashMap::new(),
+        }
+    }
+    pub fn new(keymap: HashMap<(Mode, Vec<KeyEvent>), Action>) -> Self {
+        FlashJumpPopUp {
+            keymap,
+            should_quit: false,
+            query: "".to_string(),
+            should_open: false,
+            jump_map: HashMap::new(),
+        }
+    }
     fn obtain_keymap(
         &self,
         jump_map: HashMap<char, usize>,
@@ -177,6 +197,10 @@ impl PluginPopUp for FlashJumpPopUp {
     fn get_own_keymap(&self) -> HashMap<(Mode, Vec<KeyEvent>), Action> {
         self.keymap.clone()
     }
+
+    fn get_default_action(&self) -> Box<fn(KeyEvent) -> Option<Action>> {
+        Box::new(default_popup_action)
+    }
 }
 #[derive(PartialEq, Clone, Debug)]
 pub struct FlashJump {
@@ -185,65 +209,29 @@ pub struct FlashJump {
     functionality_map: HashMap<String, Action>,
 }
 impl FlashJump {
-    pub fn new(mut _ctx: AppContext, open: bool) -> Self {
-        FlashJump {
-            query: String::new(),
-            input_machine: FlashInputMachine::new(open),
-            should_quit: false,
-            current_sequence: Vec::new(),
-            jump_map: HashMap::new(),
-            open_immediately: open,
-        }
-    }
+    pub fn new(custom_bindings_map: HashMap<(Mode, Vec<KeyEvent>), String>) -> Self {
+        let functionality_map = get_functionalities();
+        let mut bindings_map = get_default_bindings();
+        bindings_map.extend(custom_bindings_map);
 
-    pub fn update_search_query(&mut self, query: String) {
-        self.query = query;
-    }
+        let mut plugin_bindings = HashMap::new();
+        let mut popup_bindings = HashMap::new();
 
-    pub fn update_interface(&mut self, explorer_manager: &mut ExplorerManager) {
-        if !&self.query.is_empty() {
-            let resulting_file_data = explorer_manager.find_elements(&self.query);
-            //If the query gives no result, end immediately
-            if resulting_file_data.is_empty() {
-                self.quit();
-                return;
-            }
-            let mut new_map = HashMap::new();
-            let mut key_list = JUMP_KEYS.to_vec();
-            let current_map_reverted = self
-                .jump_map
-                .iter()
-                .map(|(k, v)| (*v, *k))
-                .collect::<HashMap<usize, char>>();
-            if resulting_file_data.len() > JUMP_KEYS.len() {
-                self.jump_map = HashMap::new();
-            } else {
-                //if an id already exists in the map, it should have the same char
-                for file_data in resulting_file_data {
-                    let id = file_data.id;
-                    if let Some(ch) = current_map_reverted.get(&id) {
-                        let ch = pop_char(&mut key_list, Some(*ch));
-                        new_map.insert(ch, id);
-                    } else {
-                        let ch = pop_char(&mut key_list, None);
-                        new_map.insert(ch, id);
-                    }
+        for ((mode, events), string_repr) in bindings_map.iter() {
+            match mode {
+                Mode::PopUp => {
+                    popup_bindings.insert((mode.clone(), events.clone()), string_repr.clone());
                 }
-                self.jump_map = new_map;
+                _ => {
+                    plugin_bindings.insert((mode.clone(), events.clone()), string_repr.clone());
+                }
             }
-        } else {
-            if !self.jump_map.is_empty() {
-                self.quit();
-                return;
-            }
-            self.jump_map = HashMap::new();
-        };
-        self.input_machine = FlashInputMachine::new(self.open_immediately);
-        self.input_machine.merge_jump_actions(self.jump_map.clone());
-        explorer_manager.set_styling(GlobalStyling::HighlightJump(
-            self.query.clone(),
-            self.jump_map.clone(),
-        ));
+        }
+        Self {
+            plugin_bindings,
+            popup_bindings,
+            functionality_map,
+        }
     }
 }
 impl Plugin for FlashJump {
@@ -252,14 +240,14 @@ impl Plugin for FlashJump {
     }
 
     fn get_plugin_bindings(&self) -> HashMap<(Mode, Vec<KeyEvent>), String> {
-        todo!()
+        self.plugin_bindings.clone()
     }
 
     fn get_popup_bindings(&self) -> HashMap<(Mode, Vec<KeyEvent>), String> {
-        todo!()
+        self.popup_bindings.clone()
     }
 
     fn get_functionality_map(&self) -> HashMap<String, Action> {
-        todo!()
+        self.functionality_map.clone()
     }
 }

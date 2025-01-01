@@ -1,16 +1,21 @@
+use std::collections::HashMap;
+
+use blaze_explorer_lib::{mode::Mode, plugin::Plugin};
+use flash_plugin::FlashJump;
+use ratatui::crossterm::event::KeyEvent;
+
 pub mod flash_commands;
+pub mod flash_defaults;
 pub mod flash_plugin;
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
+//Plugin getter
+#[unsafe(no_mangle)]
+pub extern "Rust" fn get_plugin(
+    bindings_map: HashMap<(Mode, Vec<KeyEvent>), String>,
+) -> Box<dyn Plugin> {
+    Box::new(FlashJump::new(bindings_map))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
 }
