@@ -3,8 +3,10 @@
 //jump to a specific file
 //
 
+use blaze_explorer_lib::plugin::plugin_action::PluginAction;
 use blaze_explorer_lib::{
-    action::PopupAction, input_machine::input_machine_helpers::convert_str_to_events,
+    action::PopupAction, create_plugin_action,
+    input_machine::input_machine_helpers::convert_str_to_events,
 };
 use std::collections::HashMap;
 
@@ -14,7 +16,6 @@ use blaze_explorer_lib::{
     app_context::AppContext,
     command::{Command, ResetStyling},
     components::{explorer_manager::ExplorerManager, explorer_table::GlobalStyling},
-    flash_input_machine::FlashInputMachine,
     insert_binding,
     mode::Mode,
     plugin::{Plugin, plugin_popup::PluginPopUp},
@@ -26,7 +27,10 @@ use ratatui::{
     layout::Rect,
 };
 
-use crate::flash_defaults::{default_popup_action, get_default_bindings, get_functionalities};
+use crate::{
+    flash_commands::{JumpAndClose, JumpAndOpen},
+    flash_defaults::{default_popup_action, get_default_bindings, get_functionalities},
+};
 const JUMP_KEYS: [char; 25] = [
     'q', 'w', 'e', 'r', 't', 'u', 'i', 'o', 'p', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'z',
     'x', 'c', 'v', 'b', 'n', 'm',
@@ -90,8 +94,8 @@ impl FlashJumpPopUp {
                     KeyModifiers::NONE,
                 )]),
                 match self.should_open {
-                    false => Action::PopupAct(PopupAction::JumpAndClose(*u)),
-                    true => Action::PopupAct(PopupAction::JumpAndOpen(*u)),
+                    false => create_plugin_action!(JumpAndClose, *u),
+                    true => create_plugin_action!(JumpAndOpen, *u),
                 },
             );
         }
@@ -152,12 +156,14 @@ impl PluginPopUp for FlashJumpPopUp {
         Ok(())
     }
 
-    fn push_search_char(&mut self, ch: char) {
-        self.query.push(ch)
+    fn push_search_char(&mut self, ch: char) -> Option<Action> {
+        self.query.push(ch);
+        Some(Action::PopupAct(PopupAction::UpdatePopup))
     }
 
-    fn drop_search_char(&mut self) {
+    fn drop_search_char(&mut self) -> Option<Action> {
         self.query.pop();
+        Some(Action::PopupAct(PopupAction::UpdatePopup))
     }
 
     fn quit(&mut self) {
@@ -172,7 +178,9 @@ impl PluginPopUp for FlashJumpPopUp {
         Some(Box::new(ResetStyling::new()))
     }
 
-    fn erase_text(&mut self) {}
+    fn erase_text(&mut self) -> Option<Action> {
+        Some(Action::PopupAct(PopupAction::UpdatePopup))
+    }
 
     fn should_quit(&self) -> bool {
         self.should_quit
@@ -200,6 +208,10 @@ impl PluginPopUp for FlashJumpPopUp {
 
     fn get_default_action(&self) -> Box<fn(KeyEvent) -> Option<Action>> {
         Box::new(default_popup_action)
+    }
+
+    fn update_app(&mut self, app: &mut App) {
+        self.update_interface(app);
     }
 }
 #[derive(PartialEq, Clone, Debug)]
