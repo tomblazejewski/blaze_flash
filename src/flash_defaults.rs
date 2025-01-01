@@ -15,6 +15,8 @@ use ratatui::crossterm::event::{KeyCode, KeyEvent};
 use crate::flash_commands::{launch_flash_jump, launch_flash_open};
 use blaze_explorer_lib::input_machine::input_machine_helpers::convert_str_to_events;
 
+pub const PLUGIN_NAME: &str = "Flash";
+
 //Default popup action
 pub fn default_popup_action(key_event: KeyEvent) -> Option<Action> {
     match key_event.code {

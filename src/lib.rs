@@ -14,8 +14,3 @@ pub extern "Rust" fn get_plugin(
 ) -> Box<dyn Plugin> {
     Box::new(FlashJump::new(bindings_map))
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-}

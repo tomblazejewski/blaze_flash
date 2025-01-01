@@ -1,7 +1,6 @@
 //Struct representing the plugin used to jump to a chosen filename
 //Aims to send and request data from the explorer table in order to send an action requesting to
 //jump to a specific file
-//
 
 use blaze_explorer_lib::plugin::plugin_action::PluginAction;
 use blaze_explorer_lib::{
@@ -13,9 +12,8 @@ use std::collections::HashMap;
 use blaze_explorer_lib::{
     action::Action,
     app::App,
-    app_context::AppContext,
     command::{Command, ResetStyling},
-    components::{explorer_manager::ExplorerManager, explorer_table::GlobalStyling},
+    components::explorer_table::GlobalStyling,
     insert_binding,
     mode::Mode,
     plugin::{Plugin, plugin_popup::PluginPopUp},
@@ -29,7 +27,9 @@ use ratatui::{
 
 use crate::{
     flash_commands::{JumpAndClose, JumpAndOpen},
-    flash_defaults::{default_popup_action, get_default_bindings, get_functionalities},
+    flash_defaults::{
+        PLUGIN_NAME, default_popup_action, get_default_bindings, get_functionalities,
+    },
 };
 const JUMP_KEYS: [char; 25] = [
     'q', 'w', 'e', 'r', 't', 'u', 'i', 'o', 'p', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'z',
@@ -248,7 +248,7 @@ impl FlashJump {
 }
 impl Plugin for FlashJump {
     fn display_details(&self) -> String {
-        "Flash".to_string()
+        PLUGIN_NAME.to_string()
     }
 
     fn get_plugin_bindings(&self) -> HashMap<(Mode, Vec<KeyEvent>), String> {

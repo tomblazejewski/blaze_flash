@@ -5,11 +5,11 @@ use blaze_explorer_lib::{
     plugin::plugin_helpers::{PluginFetchResult, access_plugin},
 };
 
-use crate::flash_plugin::FlashJumpPopUp;
+use crate::{flash_defaults::PLUGIN_NAME, flash_plugin::FlashJumpPopUp};
 
 //Plugin functions
 pub fn launch_flash_jump(app: &mut App) -> Option<Action> {
-    let result = access_plugin(app, "Telescope");
+    let result = access_plugin(app, PLUGIN_NAME);
     let plugin = match result {
         PluginFetchResult::Err(action) => return action,
         PluginFetchResult::Ok(plugin) => plugin,
@@ -21,7 +21,7 @@ pub fn launch_flash_jump(app: &mut App) -> Option<Action> {
     None
 }
 pub fn launch_flash_open(app: &mut App) -> Option<Action> {
-    let result = access_plugin(app, "Telescope");
+    let result = access_plugin(app, PLUGIN_NAME);
     let plugin = match result {
         PluginFetchResult::Err(action) => return action,
         PluginFetchResult::Ok(plugin) => plugin,
