@@ -49,7 +49,7 @@ impl Command for JumpAndClose {
     fn execute(&mut self, app: &mut App) -> Option<Action> {
         match &mut app.popup {
             None => {}
-            Some(ref mut popup) => popup.quit(),
+            &mut Some(ref mut popup) => popup.quit(),
         }
         Some(Action::ExplorerAct(ExplorerAction::JumpToId(self.id)))
     }
@@ -70,7 +70,7 @@ impl Command for JumpAndOpen {
     fn execute(&mut self, app: &mut App) -> Option<Action> {
         match &mut app.popup {
             None => {}
-            Some(ref mut popup) => popup.quit(),
+            &mut Some(ref mut popup) => popup.quit(),
         }
         app.explorer_manager.jump_to_id(self.id);
         Some(Action::ExplorerAct(ExplorerAction::SelectDirectory))
