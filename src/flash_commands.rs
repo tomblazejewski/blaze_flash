@@ -76,3 +76,37 @@ impl Command for JumpAndOpen {
         Some(Action::ExplorerAct(ExplorerAction::SelectDirectory))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use blaze_explorer_lib::plugin::plugin_helpers::DummyPluginPopUp;
+
+    use super::*;
+
+    #[test]
+    fn test_jump_and_close() {
+        let mut app = App::new().unwrap();
+        let mut jump_command = JumpAndClose::new(2);
+        let popup = DummyPluginPopUp::new();
+        app.popup = Some(Box::new(popup));
+        let result = jump_command.execute(&mut app);
+
+        assert_eq!(
+            result,
+            Some(Action::ExplorerAct(ExplorerAction::JumpToId(2)))
+        );
+    }
+    #[test]
+    fn test_jump_and_open() {
+        let mut app = App::new().unwrap();
+        let mut jump_command = JumpAndOpen::new(2);
+        let popup = DummyPluginPopUp::new();
+        app.popup = Some(Box::new(popup));
+        let result = jump_command.execute(&mut app);
+
+        assert_eq!(
+            result,
+            Some(Action::ExplorerAct(ExplorerAction::SelectDirectory))
+        );
+    }
+}

@@ -2,11 +2,9 @@
 //Aims to send and request data from the explorer table in order to send an action requesting to
 //jump to a specific file
 
+use blaze_explorer_lib::construct_plugin;
 use blaze_explorer_lib::plugin::plugin_action::PluginAction;
-use blaze_explorer_lib::{
-    action::PopupAction, create_plugin_action,
-    input_machine::input_machine_helpers::convert_str_to_events,
-};
+use blaze_explorer_lib::{action::PopupAction, create_plugin_action};
 use std::collections::HashMap;
 
 use blaze_explorer_lib::{
@@ -14,7 +12,6 @@ use blaze_explorer_lib::{
     app::App,
     command::{Command, ResetStyling},
     components::explorer_table::GlobalStyling,
-    insert_binding,
     mode::Mode,
     plugin::{Plugin, plugin_popup::PluginPopUp},
 };
@@ -36,6 +33,8 @@ const JUMP_KEYS: [char; 25] = [
     'x', 'c', 'v', 'b', 'n', 'm',
 ];
 
+///Removes a char from a key_list. The char to be removed can be specified or picked from the top
+///of the list, depending on the `ch` argument
 pub fn pop_char(key_list: &mut Vec<char>, ch: Option<char>) -> char {
     match ch {
         Some(ch) => {
@@ -44,14 +43,6 @@ pub fn pop_char(key_list: &mut Vec<char>, ch: Option<char>) -> char {
         }
         None => key_list.pop().unwrap(),
     }
-}
-
-///Creates a basic HashMap containing PopUp bindings regardless of query in action
-fn create_basic_bindings() -> HashMap<(Mode, Vec<KeyEvent>), String> {
-    let mut bindings_map = HashMap::new();
-    insert_binding!(bindings_map, Mode::PopUp, "<Esc>", "FlashJumpQuit");
-    insert_binding!(bindings_map, Mode::PopUp, "<BS>", "FlashJumpDropChar");
-    bindings_map
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -196,7 +187,7 @@ impl PluginPopUp for FlashJumpPopUp {
             {
                 match self.query.is_empty() {
                     true => String::new(),
-                    false => format!(":{}", &self.query),
+                    false => format!(": {}", &self.query),
                 }
             }
         )
@@ -215,38 +206,21 @@ impl PluginPopUp for FlashJumpPopUp {
     }
 }
 #[derive(PartialEq, Clone, Debug)]
-pub struct FlashJump {
+pub struct FlashPlugin {
     plugin_bindings: HashMap<(Mode, Vec<KeyEvent>), String>,
     popup_bindings: HashMap<(Mode, Vec<KeyEvent>), String>,
     functionality_map: HashMap<String, Action>,
 }
-impl FlashJump {
+impl FlashPlugin {
     pub fn new(custom_bindings_map: HashMap<(Mode, Vec<KeyEvent>), String>) -> Self {
-        let functionality_map = get_functionalities();
-        let mut bindings_map = get_default_bindings();
-        bindings_map.extend(custom_bindings_map);
-
-        let mut plugin_bindings = HashMap::new();
-        let mut popup_bindings = HashMap::new();
-
-        for ((mode, events), string_repr) in bindings_map.iter() {
-            match mode {
-                Mode::PopUp => {
-                    popup_bindings.insert((mode.clone(), events.clone()), string_repr.clone());
-                }
-                _ => {
-                    plugin_bindings.insert((mode.clone(), events.clone()), string_repr.clone());
-                }
-            }
-        }
-        Self {
-            plugin_bindings,
-            popup_bindings,
-            functionality_map,
-        }
+        construct_plugin!(
+            get_functionalities,
+            get_default_bindings,
+            custom_bindings_map
+        )
     }
 }
-impl Plugin for FlashJump {
+impl Plugin for FlashPlugin {
     fn display_details(&self) -> String {
         PLUGIN_NAME.to_string()
     }
@@ -261,5 +235,82 @@ impl Plugin for FlashJump {
 
     fn get_functionality_map(&self) -> HashMap<String, Action> {
         self.functionality_map.clone()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::env;
+
+    use super::*;
+
+    #[test]
+    fn test_pop_char() {
+        let mut key_list = JUMP_KEYS.to_vec();
+        let to_remove = Some('a');
+        let result = pop_char(&mut key_list, to_remove);
+        assert_eq!(result, 'a');
+        let mut expected_key_list = JUMP_KEYS.to_vec();
+        expected_key_list.retain(|k| *k != 'a');
+        assert_eq!(key_list, expected_key_list);
+        pop_char(&mut key_list, None);
+        assert_eq!(key_list.len(), expected_key_list.len() - 1);
+    }
+
+    #[test]
+    fn test_popup_obtain_keymap() {
+        let mut key_map = HashMap::new();
+        key_map.insert(
+            (Mode::PopUp, vec![KeyEvent::new(
+                KeyCode::Char('a'),
+                KeyModifiers::NONE,
+            )]),
+            Action::PopupAct(PopupAction::Quit),
+        );
+        let popup = FlashJumpPopUp::new(key_map.clone());
+        let mut jump_map = HashMap::new();
+        jump_map.insert('b', 2);
+        jump_map.insert('c', 8);
+
+        let final_keymap = popup.obtain_keymap(jump_map);
+        let mut expected_keymap = key_map.clone();
+        expected_keymap.insert(
+            (Mode::PopUp, vec![KeyEvent::new(
+                KeyCode::Char('b'),
+                KeyModifiers::NONE,
+            )]),
+            create_plugin_action!(JumpAndClose, 2),
+        );
+        expected_keymap.insert(
+            (Mode::PopUp, vec![KeyEvent::new(
+                KeyCode::Char('c'),
+                KeyModifiers::NONE,
+            )]),
+            create_plugin_action!(JumpAndClose, 8),
+        );
+        assert_eq!(final_keymap, expected_keymap);
+    }
+
+    #[test]
+    fn test_update_interface() {
+        let mut app = App::new().unwrap();
+        let current_path = env::current_dir().unwrap();
+        let test_path = current_path.join("tests");
+        app.update_path(test_path, None);
+        let mut flash = FlashJumpPopUp::new(HashMap::new());
+        flash.query = "fold".to_string();
+        //get hold of the explorer table before updating
+        let mut et = app.explorer_manager.clone();
+        flash.update_interface(&mut app);
+        let jump_map = flash.jump_map.clone();
+        assert_eq!(jump_map.len(), 2);
+        let apparent_jump_map = HashMap::from([('m', 0), ('n', 1)]);
+        et.set_styling(GlobalStyling::HighlightJump(
+            flash.query.clone(),
+            apparent_jump_map.clone(),
+        ));
+        assert_eq!(et, app.explorer_manager);
+        //Get the root folder
+        let _ = env::set_current_dir(current_path);
     }
 }
