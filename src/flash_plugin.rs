@@ -4,6 +4,7 @@
 
 use blaze_explorer_lib::construct_plugin;
 use blaze_explorer_lib::plugin::plugin_action::PluginAction;
+use blaze_explorer_lib::plugin::plugin_helpers::get_push_on_char_action;
 use blaze_explorer_lib::{action::PopupAction, create_plugin_action};
 use std::collections::HashMap;
 
@@ -24,9 +25,7 @@ use ratatui::{
 
 use crate::{
     flash_commands::{JumpAndClose, JumpAndOpen},
-    flash_defaults::{
-        PLUGIN_NAME, default_popup_action, get_default_bindings, get_functionalities,
-    },
+    flash_defaults::{PLUGIN_NAME, get_default_bindings, get_functionalities},
 };
 const JUMP_KEYS: [char; 25] = [
     'q', 'w', 'e', 'r', 't', 'u', 'i', 'o', 'p', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'z',
@@ -198,7 +197,7 @@ impl PluginPopUp for FlashJumpPopUp {
     }
 
     fn get_default_action(&self) -> Box<fn(KeyEvent) -> Option<Action>> {
-        Box::new(default_popup_action)
+        Box::new(get_push_on_char_action)
     }
 
     fn update_app(&mut self, app: &mut App) {

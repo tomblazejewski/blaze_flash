@@ -17,14 +17,6 @@ use blaze_explorer_lib::input_machine::input_machine_helpers::convert_str_to_eve
 
 pub const PLUGIN_NAME: &str = "Flash";
 
-//Default popup action
-pub fn default_popup_action(key_event: KeyEvent) -> Option<Action> {
-    match key_event.code {
-        KeyCode::Char(ch) => Some(create_plugin_action!(PluginPushSearchChar, ch)),
-        _ => Some(Action::PopupAct(PopupAction::Quit)),
-    }
-}
-
 //Default functionalities
 pub fn get_functionalities() -> HashMap<String, Action> {
     let mut functionality_map = HashMap::new();
@@ -47,25 +39,4 @@ pub fn get_default_bindings() -> HashMap<(Mode, Vec<KeyEvent>), String> {
     insert_binding!(bindings_map, Mode::Normal, "m", "FlashJump");
     insert_binding!(bindings_map, Mode::Normal, "M", "FlashOpen");
     bindings_map
-}
-
-#[cfg(test)]
-mod tests {
-    use ratatui::crossterm::event::KeyModifiers;
-
-    use super::*;
-
-    #[test]
-    fn test_default_action() {
-        let caps_event = KeyEvent::new(KeyCode::CapsLock, KeyModifiers::NONE);
-        let char_event = KeyEvent::new(KeyCode::Char('a'), KeyModifiers::NONE);
-        assert_eq!(
-            default_popup_action(caps_event),
-            Some(Action::PopupAct(PopupAction::Quit))
-        );
-        assert_eq!(
-            default_popup_action(char_event),
-            Some(create_plugin_action!(PluginPushSearchChar, 'a'))
-        );
-    }
 }

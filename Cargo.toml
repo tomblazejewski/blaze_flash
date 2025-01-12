@@ -22,7 +22,7 @@ tracing = "0.1.40"
 tracing-error = "0.2.0"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 tui-textbox = "0.3.0"
-blaze_explorer_lib = { path = "../../blaze_explorer/blaze_explorer_lib" , version="*"}
+blaze_explorer_lib = { path = "../../blaze_explorer/blaze_explorer_lib" , version=">=0.6.0"}
 
 [lib]
 name = "blaze_flash"
