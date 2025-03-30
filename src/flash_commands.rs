@@ -77,9 +77,46 @@ impl Command for JumpAndOpen {
     }
 }
 
+#[derive(Clone, PartialEq, Debug)]
+pub struct JumpToLetter {
+    letter: char,
+}
+
+impl JumpToLetter {
+    pub fn new(letter: char) -> Self {
+        Self { letter }
+    }
+}
+
+impl Command for JumpToLetter {
+    fn execute(&mut self, app: &mut App) -> Option<Action> {
+        match &mut app.popup {
+            None => {}
+            &mut Some(ref mut popup) => popup.quit(),
+        }
+        let path_list = app
+            .explorer_manager
+            .find_elements("")
+            .iter()
+            .map(|x| x.filename.clone())
+            .collect::<Vec<String>>();
+
+        let letter_path = self.letter.to_string();
+
+        // check how many paths are alphabetically earlier than the letter_path
+        let mut count = path_list.iter().filter(|x| *x < &letter_path).count();
+        if count == path_list.len() {
+            count -= 1;
+        }
+        Some(Action::ExplorerAct(ExplorerAction::JumpToId(count)))
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use blaze_explorer_lib::plugin::plugin_helpers::DummyPluginPopUp;
+    use blaze_explorer_lib::{
+        plugin::plugin_helpers::DummyPluginPopUp, testing_utils::create_testing_folder,
+    };
 
     use super::*;
 
@@ -107,6 +144,38 @@ mod tests {
         assert_eq!(
             result,
             Some(Action::ExplorerAct(ExplorerAction::SelectDirectory))
+        );
+    }
+
+    #[test]
+    fn test_jump_to_letter() {
+        let mut app = App::new().unwrap();
+        let temp_dir = create_testing_folder().unwrap();
+        let file_2 = temp_dir.file_list[1].clone();
+        app.explorer_manager.show_in_folder(file_2);
+        let mut jump_command = JumpToLetter::new('a');
+        let result = jump_command.execute(&mut app);
+        assert_eq!(
+            result,
+            Some(Action::ExplorerAct(ExplorerAction::JumpToId(0)))
+        );
+        let mut jump_command = JumpToLetter::new('f');
+        let result = jump_command.execute(&mut app);
+        assert_eq!(
+            result,
+            Some(Action::ExplorerAct(ExplorerAction::JumpToId(0)))
+        );
+        let mut jump_command = JumpToLetter::new('s');
+        let result = jump_command.execute(&mut app);
+        assert_eq!(
+            result,
+            Some(Action::ExplorerAct(ExplorerAction::JumpToId(3)))
+        );
+        let mut jump_command = JumpToLetter::new('z');
+        let result = jump_command.execute(&mut app);
+        assert_eq!(
+            result,
+            Some(Action::ExplorerAct(ExplorerAction::JumpToId(3)))
         );
     }
 }
