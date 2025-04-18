@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use blaze_explorer_lib::action::PopupAction;
+use blaze_explorer_lib::input_machine::permutation_set::PermutationSet;
 use blaze_explorer_lib::mode::Mode;
 use blaze_explorer_lib::plugin::plugin_action::PluginAction;
 use blaze_explorer_lib::plugin::plugin_commands::{PluginDropSearchChar, PluginPushSearchChar};
@@ -9,10 +10,13 @@ use blaze_explorer_lib::{
     create_plugin_action,
     plugin::plugin_commands::PluginQuit,
 };
-use blaze_explorer_lib::{custom_action, insert_binding};
+use blaze_explorer_lib::{
+    custom_action, insert_binding, insert_permutated_binding, insert_permutated_functionality,
+};
 use ratatui::crossterm::event::{KeyCode, KeyEvent};
 
 use crate::flash_commands::{launch_flash_jump, launch_flash_open};
+use crate::flash_helpers::create_flash_jump_to_letter;
 use blaze_explorer_lib::input_machine::input_machine_helpers::convert_str_to_events;
 
 pub const PLUGIN_NAME: &str = "Flash";
@@ -27,6 +31,13 @@ pub fn get_functionalities() -> HashMap<String, Action> {
         "FlashDropSearchChar".to_string(),
         create_plugin_action!(PluginDropSearchChar),
     );
+    insert_permutated_functionality!(
+        functionality_map,
+        "FlashJumpToLetter-{}",
+        [PermutationSet::LowerAlpha],
+        create_flash_jump_to_letter,
+        letter
+    );
 
     functionality_map
 }
@@ -38,5 +49,12 @@ pub fn get_default_bindings() -> HashMap<(Mode, Vec<KeyEvent>), String> {
     insert_binding!(bindings_map, Mode::PopUp, "<BS>", "FlashDropSearchChar");
     insert_binding!(bindings_map, Mode::Normal, "m", "FlashJump");
     insert_binding!(bindings_map, Mode::Normal, "M", "FlashOpen");
+    insert_permutated_binding!(
+        bindings_map,
+        Mode::Normal,
+        "<C-m>{}",
+        [PermutationSet::LowerAlpha],
+        "FlashJumpToLetter-{}"
+    );
     bindings_map
 }

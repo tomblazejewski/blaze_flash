@@ -100,11 +100,12 @@ impl Command for JumpToLetter {
             .iter()
             .map(|x| x.filename.clone())
             .collect::<Vec<String>>();
-
-        let letter_path = self.letter.to_string();
-
         // check how many paths are alphabetically earlier than the letter_path
-        let mut count = path_list.iter().filter(|x| *x < &letter_path).count();
+        let smaller = path_list
+            .iter()
+            .filter(|x| x.chars().next().unwrap().to_ascii_lowercase() < self.letter)
+            .collect::<Vec<_>>();
+        let mut count = smaller.len();
         if count == path_list.len() {
             count -= 1;
         }
@@ -115,7 +116,7 @@ impl Command for JumpToLetter {
 #[cfg(test)]
 mod tests {
     use blaze_explorer_lib::{
-        plugin::plugin_helpers::DummyPluginPopUp, testing_utils::create_testing_folder,
+        plugin::plugin_helpers::DummyPluginPopUp, testing_utils::create_custom_testing_folder,
     };
 
     use super::*;
@@ -150,32 +151,48 @@ mod tests {
     #[test]
     fn test_jump_to_letter() {
         let mut app = App::new().unwrap();
-        let temp_dir = create_testing_folder().unwrap();
-        let file_2 = temp_dir.file_list[1].clone();
-        app.explorer_manager.show_in_folder(file_2);
+        let file_list = vec![
+            "aaa.txt",
+            "aba.txt",
+            "analysis/aaa.txt",
+            "bbb.csv",
+            "ccc.xlsx",
+            "ddd.csv",
+            "folder_1/aaa.txt",
+            "ggg.csv",
+            "mmm.log",
+            "nnn.txt",
+            "ppp.log",
+            "rrr/",
+            "sss.csv",
+            "zzz.txt",
+        ];
+        let temp_dir = create_custom_testing_folder(file_list).unwrap();
+        app.explorer_manager
+            .update_path(temp_dir.root_dir.path().to_path_buf(), None);
         let mut jump_command = JumpToLetter::new('a');
         let result = jump_command.execute(&mut app);
         assert_eq!(
             result,
             Some(Action::ExplorerAct(ExplorerAction::JumpToId(0)))
         );
-        let mut jump_command = JumpToLetter::new('f');
-        let result = jump_command.execute(&mut app);
-        assert_eq!(
-            result,
-            Some(Action::ExplorerAct(ExplorerAction::JumpToId(0)))
-        );
-        let mut jump_command = JumpToLetter::new('s');
+        let mut jump_command = JumpToLetter::new('b');
         let result = jump_command.execute(&mut app);
         assert_eq!(
             result,
             Some(Action::ExplorerAct(ExplorerAction::JumpToId(3)))
+        );
+        let mut jump_command = JumpToLetter::new('g');
+        let result = jump_command.execute(&mut app);
+        assert_eq!(
+            result,
+            Some(Action::ExplorerAct(ExplorerAction::JumpToId(7)))
         );
         let mut jump_command = JumpToLetter::new('z');
         let result = jump_command.execute(&mut app);
         assert_eq!(
             result,
-            Some(Action::ExplorerAct(ExplorerAction::JumpToId(3)))
+            Some(Action::ExplorerAct(ExplorerAction::JumpToId(13)))
         );
     }
 }
