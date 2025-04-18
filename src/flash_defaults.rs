@@ -34,7 +34,7 @@ pub fn get_functionalities() -> HashMap<String, Action> {
     insert_permutated_functionality!(
         functionality_map,
         "FlashJumpToLetter-{}",
-        [PermutationSet::LowerAlpha],
+        [PermutationSet::LowerAlpha | PermutationSet::Custom(vec!['.'])],
         create_flash_jump_to_letter,
         letter
     );
@@ -53,7 +53,7 @@ pub fn get_default_bindings() -> HashMap<(Mode, Vec<KeyEvent>), String> {
         bindings_map,
         Mode::Normal,
         "<C-m>{}",
-        [PermutationSet::LowerAlpha],
+        [PermutationSet::LowerAlpha | PermutationSet::Custom(vec!['.'])],
         "FlashJumpToLetter-{}"
     );
     bindings_map
