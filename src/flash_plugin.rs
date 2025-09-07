@@ -79,10 +79,10 @@ impl FlashJumpPopUp {
         let mut keymap = self.keymap.clone();
         for (ch, u) in jump_map.iter() {
             keymap.insert(
-                (Mode::PopUp, vec![KeyEvent::new(
-                    KeyCode::Char(*ch),
-                    KeyModifiers::NONE,
-                )]),
+                (
+                    Mode::PopUp,
+                    vec![KeyEvent::new(KeyCode::Char(*ch), KeyModifiers::NONE)],
+                ),
                 match self.should_open {
                     false => create_plugin_action!(JumpAndClose, *u),
                     true => create_plugin_action!(JumpAndOpen, *u),
@@ -133,7 +133,7 @@ impl FlashJumpPopUp {
         };
         let new_keymap = self.obtain_keymap(self.jump_map.clone());
         app.input_machine.attach_from_hashmap(new_keymap);
-        explorer_manager.set_styling(GlobalStyling::HighlightJump(
+        explorer_manager.set_highlighting_rule(GlobalStyling::HighlightJump(
             self.query.clone(),
             self.jump_map.clone(),
         ));
@@ -260,10 +260,10 @@ mod tests {
     fn test_popup_obtain_keymap() {
         let mut key_map = HashMap::new();
         key_map.insert(
-            (Mode::PopUp, vec![KeyEvent::new(
-                KeyCode::Char('a'),
-                KeyModifiers::NONE,
-            )]),
+            (
+                Mode::PopUp,
+                vec![KeyEvent::new(KeyCode::Char('a'), KeyModifiers::NONE)],
+            ),
             Action::PopupAct(PopupAction::Quit),
         );
         let popup = FlashJumpPopUp::new(key_map.clone());
@@ -274,17 +274,17 @@ mod tests {
         let final_keymap = popup.obtain_keymap(jump_map);
         let mut expected_keymap = key_map.clone();
         expected_keymap.insert(
-            (Mode::PopUp, vec![KeyEvent::new(
-                KeyCode::Char('b'),
-                KeyModifiers::NONE,
-            )]),
+            (
+                Mode::PopUp,
+                vec![KeyEvent::new(KeyCode::Char('b'), KeyModifiers::NONE)],
+            ),
             create_plugin_action!(JumpAndClose, 2),
         );
         expected_keymap.insert(
-            (Mode::PopUp, vec![KeyEvent::new(
-                KeyCode::Char('c'),
-                KeyModifiers::NONE,
-            )]),
+            (
+                Mode::PopUp,
+                vec![KeyEvent::new(KeyCode::Char('c'), KeyModifiers::NONE)],
+            ),
             create_plugin_action!(JumpAndClose, 8),
         );
         assert_eq!(final_keymap, expected_keymap);
@@ -304,7 +304,7 @@ mod tests {
         let jump_map = flash.jump_map.clone();
         assert_eq!(jump_map.len(), 2);
         let apparent_jump_map = HashMap::from([('m', 0), ('n', 1)]);
-        et.set_styling(GlobalStyling::HighlightJump(
+        et.set_highlighting_rule(GlobalStyling::HighlightJump(
             flash.query.clone(),
             apparent_jump_map.clone(),
         ));

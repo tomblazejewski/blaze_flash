@@ -6,6 +6,7 @@ use ratatui::crossterm::event::KeyEvent;
 
 pub mod flash_commands;
 pub mod flash_defaults;
+pub mod flash_helpers;
 pub mod flash_plugin;
 //Plugin getter
 #[unsafe(no_mangle)]

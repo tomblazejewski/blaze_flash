@@ -8,6 +8,7 @@ A [flash](https://github.com/folke/flash.nvim)-style plugin for [Blaze Explorer]
 | ---------------- | ----------------------------------------------------------------- |
 | `m`              | Launch search for file (selects the given directory when matched) |
 | `M`              | Launch search for file (opens the given directory when matched)   |
+| `<C-m><letter>`  | Jump to the first file beginning with such letter                 |
 
 ## "PopUp" level
 

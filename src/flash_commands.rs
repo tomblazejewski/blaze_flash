@@ -77,9 +77,47 @@ impl Command for JumpAndOpen {
     }
 }
 
+#[derive(Clone, PartialEq, Debug)]
+pub struct JumpToLetter {
+    letter: char,
+}
+
+impl JumpToLetter {
+    pub fn new(letter: char) -> Self {
+        Self { letter }
+    }
+}
+
+impl Command for JumpToLetter {
+    fn execute(&mut self, app: &mut App) -> Option<Action> {
+        match &mut app.popup {
+            None => {}
+            &mut Some(ref mut popup) => popup.quit(),
+        }
+        let path_list = app
+            .explorer_manager
+            .find_elements("")
+            .iter()
+            .map(|x| x.filename.clone())
+            .collect::<Vec<String>>();
+        // check how many paths are alphabetically earlier than the letter_path
+        let smaller = path_list
+            .iter()
+            .filter(|x| x.chars().next().unwrap().to_ascii_lowercase() < self.letter)
+            .collect::<Vec<_>>();
+        let mut count = smaller.len();
+        if count == path_list.len() {
+            count -= 1;
+        }
+        Some(Action::ExplorerAct(ExplorerAction::JumpToId(count)))
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use blaze_explorer_lib::plugin::plugin_helpers::DummyPluginPopUp;
+    use blaze_explorer_lib::{
+        plugin::plugin_helpers::DummyPluginPopUp, testing_utils::create_custom_testing_folder,
+    };
 
     use super::*;
 
@@ -107,6 +145,54 @@ mod tests {
         assert_eq!(
             result,
             Some(Action::ExplorerAct(ExplorerAction::SelectDirectory))
+        );
+    }
+
+    #[test]
+    fn test_jump_to_letter() {
+        let mut app = App::new().unwrap();
+        let file_list = vec![
+            "aaa.txt",
+            "aba.txt",
+            "analysis/aaa.txt",
+            "bbb.csv",
+            "ccc.xlsx",
+            "ddd.csv",
+            "folder_1/aaa.txt",
+            "ggg.csv",
+            "mmm.log",
+            "nnn.txt",
+            "ppp.log",
+            "rrr/",
+            "sss.csv",
+            "zzz.txt",
+        ];
+        let temp_dir = create_custom_testing_folder(file_list).unwrap();
+        app.explorer_manager
+            .update_path(temp_dir.root_dir.path().to_path_buf(), None);
+        let mut jump_command = JumpToLetter::new('a');
+        let result = jump_command.execute(&mut app);
+        assert_eq!(
+            result,
+            Some(Action::ExplorerAct(ExplorerAction::JumpToId(0)))
+        );
+        let mut jump_command = JumpToLetter::new('b');
+        let result = jump_command.execute(&mut app);
+        assert_eq!(
+            result,
+            Some(Action::ExplorerAct(ExplorerAction::JumpToId(3)))
+        );
+        let mut jump_command = JumpToLetter::new('g');
+        let result = jump_command.execute(&mut app);
+        assert_eq!(
+            result,
+            Some(Action::ExplorerAct(ExplorerAction::JumpToId(7)))
+        );
+        let mut jump_command = JumpToLetter::new('z');
+        let result = jump_command.execute(&mut app);
+        assert_eq!(
+            result,
+            Some(Action::ExplorerAct(ExplorerAction::JumpToId(13)))
         );
     }
 }
